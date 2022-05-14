@@ -1,1 +1,1 @@
-print("this is logger file")
+print("this is first phython proj")
