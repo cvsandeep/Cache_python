@@ -29,11 +29,11 @@ def main():
         command, address = line.split()
         print(command)
         print(address)
-        #DecodeUpdateAddress(address)
+        cache.DecodeUpdateAddress(address, command)
         print(Cmd.READ_DATA.value)
         if command == Cmd.READ_DATA.value:
             cache.readData()
-            cache.DReadCount() # CountReads
+            cache.DReadCount()  # CountReads
         elif command == Cmd.WRITE_DATA.value:
             cache.writeData()
             cache.DWriteCount()
