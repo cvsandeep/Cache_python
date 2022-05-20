@@ -6,6 +6,11 @@ BusOp_string = ["","READ","WRITE","INVALIDATE","RWIM"]
 msg_string = ["", "GETLINE","SENDLINE", "INVALIDATELINE", "EVICTLINE"]
 BusOp = 0
 
+class BusOP:
+    # define READ 1 /* Bus Read */
+    # define WRITE 2 /* Bus Write */
+    # define INVALIDATE 3 /* Bus Invalidate */
+    # define RWIM 4
 
 class BusOperation:
     def busoperation(self, BusOp: int,Address: int,SnoopResult:int):
