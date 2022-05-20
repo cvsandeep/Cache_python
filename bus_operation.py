@@ -1,4 +1,5 @@
 from logger import Logger
+from enum import Enum
 msgOut = ' '*2048
 print(len(msgOut))
 res_string = ["NOHIT","HIT","HITM"]
@@ -6,7 +7,7 @@ BusOp_string = ["","READ","WRITE","INVALIDATE","RWIM"]
 msg_string = ["", "GETLINE","SENDLINE", "INVALIDATELINE", "EVICTLINE"]
 BusOp = 0
 
-class BusOP:
+class BusOP(Enum):
       READ  = "1" /* Bus Read */
       WRITE  = "2" /* Bus Write */
       INVALIDATE = "3"  /* Bus Invalidate */
