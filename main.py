@@ -16,6 +16,7 @@ def main():
     for line in lines:
         command, address = line.split()
         address = int(address, 16)
+        command = int(command)
         print(command)
         print(address)
         cache.DecodeUpdateAddress(address, command)

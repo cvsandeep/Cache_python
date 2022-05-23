@@ -27,6 +27,7 @@ class BusOperation():
         msgOut = "SnoopResult: Address {} SnoopResult: {}".format(format(Address, 'x'), res_string[SnoopResult])
         Logger.debugLog(self, BusLog, 'PutSnoopResult', msgOut)
 
-    def MessageToCache(self, Message: str, Address: int):
-        msgOut = "L2->L1: {} {}".foramt(msg_string[Message], Address)
+    def MessageToCache(self, Message, Address: int):
+        #msgOut = "L2->L1: {} {}".foramt(msg_string[Message], Address)
+        msgOut = "L2->L1: %s 0x%08x" %(msg_string[Message], Address)
         Logger.debugLog(self, BusLog, 'MessageToCache', msgOut)
