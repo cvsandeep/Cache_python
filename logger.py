@@ -53,12 +53,12 @@ class Logger():
         , 10: ALL
     }
 
-    def debugLog(self, loginglevel: int, functionName: str, message: str):
+    def debugLog(self, loginglevel: int, functionName: str, msg: str):
         def switch(loginglevel):
             return self.switcher.get(loginglevel)
 
         if loginglevel <= debug:
-            print('test {}:{}'.format(functionName, message))
+            print('test {}:{}'.format(functionName, msg))
 
         ###### for the case statement in the c file uncomment/uncomment the below line
         #print(switch(loginglevel))

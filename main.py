@@ -5,6 +5,7 @@ Created on Wed May 11 23:12:40 2022
 @author: Sandeep
 """
 import cache_operation
+import cache_performance
 from cache_types import Cmd
 
 
@@ -17,6 +18,7 @@ def main():
         command, address = line.split()
         address = int(address, 16)
         command = int(command)
+        cache_performance.CachePerformance.op = command
         print(command)
         print(address)
         cache.DecodeUpdateAddress(address, command)
@@ -44,7 +46,7 @@ def main():
             cache.PrintCacheLine()
         else:
             print("Invalid Operation\n")
-    cache.CachePerformance()
+    cache.CachePerformanceResult()
 
 
 main()
