@@ -5,19 +5,7 @@ Created on Wed May 11 23:12:40 2022
 @author: Sandeep
 """
 import cache_operation
-from enum import Enum
-
-
-class Cmd(Enum):
-    READ_DATA = "0"
-    WRITE_DATA = "1"
-    READ_INSTRUCTION = "2"
-    SNOOPED_INVALIDATE = "3"
-    SNOOPED_READ = "4"
-    SNOOPED_WRITE = "5"
-    SNOOPED_READ_X = "6"
-    CLEAR_AND_RESET = "8"
-    PRINT_CACHE_LINE = "9"
+from cache_types import Cmd
 
 
 def main():
@@ -27,6 +15,7 @@ def main():
 
     for line in lines:
         command, address = line.split()
+        address = int(address, 16)
         print(command)
         print(address)
         cache.DecodeUpdateAddress(address, command)

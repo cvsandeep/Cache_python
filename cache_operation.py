@@ -6,8 +6,11 @@ Created on Fri May 13 17:35:32 2022
 """
 import math
 import cache_memory
+from bus_operation import BusOperation
+from cache_types import Cmd, OperationType, SnoopType, MessageType
 
-class CacheOperation:
+
+class CacheOperation(BusOperation):
     __MesiState  = ("I", "S", "E", "M")
     __dirty_str  = (" ", "D")
 
@@ -24,7 +27,7 @@ class CacheOperation:
         self.set_index = 0
         self.__L2 = cache_memory.N_CACHE(self.__sets)
 
-    def DecodeUpdateAddress(self, address, command):
+    def DecodeUpdateAddress(self, address: int, command):
         self.__op = command
         self.__addr = address
         self.offset = address & ((1 << self.__lines) - 1)
@@ -49,43 +52,42 @@ class CacheOperation:
                 if(self.__L2.set[self.set_index].way[w].tag == tag): #Check tag
                     #debugLog(CACHEop,__func__, "Data found")
                     self.HitCount()
-                    if(self.__op == WRITE_DATA)
-                        self.UpdateMESIstate(RWIM, w)
+                    if(self.__op == Cmd.WRITE_DATA):
+                        self.__UpdateMESIstate(OperationType.RWIM, w)
                     else:
-                        self.UpdateMESIstate(READ, w)
-                    UpdatePLRU(self.set_index,w)
+                        self.__UpdateMESIstate(OperationType.READ, w)
+                    self.__UpdatePLRU(self.set_index,w)
                     return
-                
-             else:
+            else:
                 if (evict == 1):
                     evict = 0
                     way = w
 
         #debugLog(CACHEop,__func__, "Data not found in the cache line")
-    
+
         if(evict):
             #debugLog(CACHEopX,__func__, "Evicting")
             way = WhichWay(self.set_index)
-            self.VoidWay(way)
+            self.__VoidWay(way)
             self.EvictCount()
-         else:
+        else:
             self.MissCount()
-        
-    
-        msgout = "Set-%d Way-%d Tag-0x%08x",self.set_index,way,tag)
+
+
+        msgout = "Set-%d Way-%d Tag-0x%08x" %(self.set_index,way,tag)
         #debugLog(CACHEop,__func__,msgOut)
         self.__L2.set[self.set_index].way[way].valid = 1
         self.__L2.set[self.set_index].way[way].dirty = 0
         self.__L2.set[self.set_index].way[way].tag = tag
         self.__L2.set[self.set_index].way[way].MESI_state = INVALID
-        if(self.__op == WRITE_DATA):
-            self.UpdateMESIstate(RWIM, way)
+        if(self.__op == cmd.WRITE_DATA):
+            self.__UpdateMESIstate(OperationType.RWIM, way)
             #MessageToCache(GETLINE,self.__addr)
             self.__L2.set[self.set_index].way[way].dirty = 1
-         else:
-            self.UpdateMESIstate(READ, way)
-        
-        self.UpdatePLRU(self.set_index,way)
+        else:
+            self.__UpdateMESIstate(OperationType.READ, way)
+
+        self.__UpdatePLRU(self.set_index,way)
     def writeData(self):
         way = 0
         #debugLog(CACHEopX,__func__,"")
@@ -98,34 +100,33 @@ class CacheOperation:
                     break # Return data
         if ( way == self.associativity):
             self.readData()							#Should this increase any Counts?
-         else:
+        else:
             self.HitCount()
-            self.UpdatePLRU(self.set_index,w)
-            self.UpdateMESIstate(WRITE, w)
+            self.__UpdatePLRU(self.set_index,w)
+            self.__UpdateMESIstate(OperationType.WRITE, w)
             self.__L2.set[self.set_index].way[w].dirty = 1
-        
+
     def ReadInstruction(self):
         #debugLog(2,__func__,"")
-        self.dData()
+        self.readData()
+
     def SnoopedInvalidate(self):
         for w in range(self.associativity):
             if(self.__L2.set[self.set_index].way[w].valid == 1): #Check data is valid
                 if(self.__L2.set[self.set_index].way[w].tag == tag): #Check tag
                     #debugLog(CACHEop,__func__, "Data found")
                     self.UpdateMESIstateSnoop(INVALIDATE,w)
-                    #UpdatePLRU(self.set_index,w)
+                    #__UpdatePLRU(self.set_index,w)
                     return # Return data
-                
-            
-        
+
     def SnoopedRead(self):
         for w in range(self.associativity):
             if(self.__L2.set[self.set_index].way[w].valid == 1): #Check data is valid
                 if(self.__L2.set[self.set_index].way[w].tag == tag): #Check tag
                     #debugLog(CACHEop,__func__, "Data found")
-                    UpdateMESIstateSnoop(READ,w)
-                    #UpdatePLRU(self.set_index,w)
-    
+                    self.UpdateMESIstateSnoop(OperationType.READ,w)
+                    #__UpdatePLRU(self.set_index,w)
+
                     return # Return data
          #debugLog(CACHEopX, __func__, "Data not Found")
     def SnoopedWrite(self):
@@ -133,35 +134,35 @@ class CacheOperation:
             if(self.__L2.set[self.set_index].way[w].valid == 1): #Check data is valid
                 if(self.__L2.set[self.set_index].way[w].tag == tag): #Check tag
                     #debugLog(CACHEop,__func__, "Data found")
-                    UpdateMESIstateSnoop(WRITE,w) # No need as there are no any operations for write.
-                    #UpdatePLRU(self.set_index,w)
+                    UpdateMESIstateSnoop(OperationType.WRITE,w) # No need as there are no any operations for OperationType.WRITE.
+                    #__UpdatePLRU(self.set_index,w)
                     return # Return data
-                
-            
-        
+
+
+
     #debugLog(CACHEopX, __func__, "Data not Found")
     def SnoopedReadX(self):
         for w in range(self.associativity):
             if(self.__L2.set[self.set_index].way[w].valid == 1): #Check data is valid
                 if(self.__L2.set[self.set_index].way[w].tag == tag): #Check tag
                     #debugLog(CACHEop,__func__, "Data found")
-                    UpdateMESIstateSnoop(RWIM,w)
-                    #UpdatePLRU(self.set_index,w)
+                    UpdateMESIstateSnoop(OperationType.RWIM,w)
+                    #__UpdatePLRU(self.set_index,w)
                     return # Return data
-                
-            
-        
+
+
+
         #debugLog(CACHEopX, __func__, "Data not Found")
     def ClearAndSet(self):
        #debugLog(CACHEopX, __func__, "")
         for set in range(self.__sets):
             self.set_index = set
             for w in range(self.associativity):
-                    self.__VoidWay(w)
+                self.__VoidWay(w)
                 for lru in range(7):
-                self.__L2.set[set].PLRU[lru] = 0
-            
-        
+                    self.__L2.set[set].PLRU[lru] = 0
+
+
     def PrintCacheLine(self):
         set_filled = 0
         msgOut = " "
@@ -170,26 +171,27 @@ class CacheOperation:
             set_filled = 0
             msgout = "Set-%d:PLRU-" %(set)
             for lru in range(7):
-                buf = "%d",self.__L2.set[set].PLRU[lru])
+                buf = "%d" %(self.__L2.set[set].PLRU[lru])
                 msgout = msgout + buf
-            
+
             for w in range(self.associativity):
                 if(self.__L2.set[set].way[w].valid == 1): #Check data is valid
                     #len += sizeof(msgOut)
-                    buf = " Way-%d: 0x%08x,%s %s",w,self.__L2.set[set].way[w].tag, self.__dirty_str[self.__L2.set[set].way[w].dirty], MesiState[self.__L2.set[set].way[w].MESI_state])
+                    buf = " Way-%d: 0x%08x,%s %s"%(w,self.__L2.set[set].way[w].tag, self.__dirty_str[self.__L2.set[set].way[w].dirty], MesiState[self.__L2.set[set].way[w].MESI_state])
                     set_filled = 1
-                
+
                 else:
-                    buf = " Way-%d:  -------- ,  I",w)
-                
+                    buf = " Way-%d:  -------- ,  I"%(w)
+
                 msgout = msgout + buf
-            
-            if(set_filled)
+
+            if(set_filled):
+                print("")
                 #debugLog(0,__func__, msgOut)
-    
+
     def __UpdatePLRU(self,set, w):
         """
-        This is called during write and read for updating PLRU bits
+        This is called during OperationType.WRITE and OperationType.READ for updating PLRU bits
          for 4 and 8 way associative only
         """
         msgOut = "PLRU Bits "
@@ -290,12 +292,12 @@ class CacheOperation:
         else:
             ###debugLog(CACHEop, __func__, "Not supported")
             return -1
-    
+
     def __VoidWay(self, way):
         ###debugLog(CACHEopX, __func__, "")
         if (self.__L2.set[self.set_index].way[way].valid == 1):
             if(self.__L2.set[self.set_index].way[way].MESI_state == MODEFIED):
-                self.MessageToCache(GETLINE,self.__L2.set[self.set_index].way[way].tag):
+                self.MessageToCache(GETLINE,self.__L2.set[self.set_index].way[way].tag)
         #Getting the line from L1 to check weather its dirty or not
             if(self.__op < 3): # #Means Evicting
                 self.MessageToCache(EVICTLINE,self.__L2.set[self.set_index].way[way].tag)
@@ -304,117 +306,105 @@ class CacheOperation:
                 self.MessageToCache(INVALIDATELINE,self.__L2.set[self.set_index].way[way].tag)
             self.__L2.set[self.set_index].way[way].MESI_state = INVALID
             if(self.__L2.set[self.set_index].way[way].dirty == 1):
-                self.Flush(way)
+                self.__Flush(way)
         self.__L2.set[self.set_index].way[way].valid = 0
         self.__L2.set[self.set_index].way[way].dirty = 0
         self.__L2.set[self.set_index].way[way].MESI_state = 0
         self.__L2.set[self.set_index].way[way].tag = 0
 
-"""
- * This is used when flush data is required.
- * Flushes the data to the DRAM through bus.
-"""
+# """
+#  * This is used when flush data is required.
+#  * Flushes the data to the DRAM through bus.
+# """
     def __Flush(self, way):
         ###debugLog(CACHEop, __func__, "")
         if(self.__L2.set[self.set_index].way[way].MESI_state == MODEFIED):
             self.MessageToCache(GETLINE,self.__L2.set[self.set_index].way[way].tag)
         #Getting the line from L1 to check weather its dirty or not
-        self.Busoperation(WRITE, addr, HITM)
+        self.Busoperation(OperationType.WRITE, addr, HITM)
         self.__L2.set[self.set_index].way[way].dirty = 0
 
-"""
- * This is used to update the MESI state for all the transactions
- * And also performs relevant bus operation.
-"""
+# """
+#  * This is used to update the MESI state for all the transactions
+#  * And also performs relevant bus operation.
+# """
     def __UpdateMESIstate(self, type, way):
         state = self.__L2.set[self.set_index].way[way].MESI_state
         if state == INVALID:
-            if(type == READ):
-                res = self.GetSnoopResult(addr)
-                self.Busoperation(READ, addr, res)
-                #Read from DRAM
-                if ( res == HIT || res == HITM):
+            if(type == OperationType.READ):
+                res = self.GetSnoopResult(self.__addr)
+                self.Busoperation(OperationType.READ, addr, res)
+                #OperationType.READ from DRAM
+                if ( res == HIT or res == HITM):
                     self.__L2.set[self.set_index].way[way].MESI_state = SHARED
                 elif ( res == NOHIT):
                     self.__L2.set[self.set_index].way[way].MESI_state = EXCLUSIVE
-                
-            elif(type == WRITE || type == RWIM):
+
+            elif(type == OperationType.WRITE or type == OperationType.RWIM):
                 self.__L2.set[self.set_index].way[way].MESI_state = MODEFIED
-                self.Busoperation(RWIM, addr, GetSnoopResult(addr))
+                self.Busoperation(OperationType.RWIM, addr, GetSnoopResult(self.__addr))
                 #Send readX command to bus
-                #First Time Write
-            
+                #First Time OperationType.WRITE
+
             self.MessageToCache(SENDLINE,self.__addr)#Sends data to L1
 
         elif state ==  SHARED:
-            if(type == READ):
+            if(type == OperationType.READ):
                 self.MessageToCache(SENDLINE,self.__addr)#Sends data to L1
-             else:
+            else:
                 self.__L2.set[self.set_index].way[way].MESI_state = MODEFIED
                 self.Busoperation(INVALIDATE, addr, HITM)
                 #Send BusUpgr command to bus
-                #First Time Write
-            
+                #First Time OperationType.WRITE
+
 
         elif state ==  EXCLUSIVE:
-            if(type == WRITE):
+            if(type == OperationType.WRITE):
                 self.__L2.set[self.set_index].way[way].MESI_state = MODEFIED
-                #First Time Write
-            elif(type == READ):
+                #First Time OperationType.WRITE
+            elif(type == OperationType.READ):
                 self.MessageToCache(SENDLINE,self.__addr)#Sends data to L1
-            
+
 
         elif state ==  MODEFIED:
-            if(type == READ):
+            if(type == OperationType.READ):
                 self.MessageToCache(SENDLINE,self.__addr)#Sends data to L1
-            
-            #Write dosent happens as L1 can only be in Exclusive or shared state when self.__L2 is in modefied state.
 
-        
-        msgOut = "%s->%s"%(MesiState[state],MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
+            #OperationType.WRITE dosent happens as L1 can only be in Exclusive or shared state when self.__L2 is in modefied state.
+        msgOut = "%s->%s"%(self.__MesiState[state], self.__MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
         ##debugLog(CACHEop,__func__, msgOut)
-    
 
-"""
- * This is used to update the MESI state for all the snoop requests
- * And also invalidates and flush when required.
-"""
-    def UpdateMESIstateSnoop(type, way):
+    def UpdateMESIstateSnoop(self, this_type, way):
         state = self.__L2.set[self.set_index].way[way].MESI_state
         if state == INVALID:
-            PutSnoopResult(addr,NOHIT)
+            self.PutSnoopResult(self.__addr, NOHIT)
 
         elif state == SHARED:
-            PutSnoopResult(addr,HIT)
+            self.PutSnoopResult(self.__addr, HIT)
             #HitCount()
-            if(type == WRITE  || type == RWIM || type == INVALIDATE ):
-                VoidWay(way)
+            if(this_type == OperationType.WRITE  or this_type == OperationType.RWIM or this_type == INVALIDATE):
+                self.__VoidWay(way)
                 self.__L2.set[self.set_index].way[way].MESI_state = INVALID
-            
+
 
         elif state == EXCLUSIVE:
-            PutSnoopResult(addr,HIT)
+            self.PutSnoopResult(self.__addr,HIT)
             #HitCount()
-            if(type == RWIM || type == INVALIDATE ):
-                VoidWay(way)
+            if(this_type == OperationType.RWIM or this_type == INVALIDATE):
+                self.__VoidWay(way)
                 self.__L2.set[self.set_index].way[way].MESI_state = INVALID
-            elif(type == READ):
+            elif(this_type == OperationType.READ):
                 self.__L2.set[self.set_index].way[way].MESI_state = SHARED
-            
 
         elif state == MODEFIED:
-            PutSnoopResult(addr,HITM)
+            self.PutSnoopResult(self.__addr,HITM)
             #HitModifiedLineCount()
-            if(type == READ):
-                Flush(way)
+            if(this_type == OperationType.READ):
+                self.__Flush(way)
                 self.__L2.set[self.set_index].way[way].MESI_state = SHARED
-            elif(type == RWIM || type == INVALIDATE ):
-                VoidWay(way)
+            elif(this_type == OperationType.RWIM or this_type == INVALIDATE):
+                self.__VoidWay(way)
                 self.__L2.set[self.set_index].way[way].MESI_state = INVALID
-                
-    
-
-        
-        msgOut = "%s->%s" %(MesiState[state],MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
+        msgOut = "%s->%s" %(self.__MesiState[state], self.__MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
         ##debugLog(CACHEop,__func__, msgOut)
 
