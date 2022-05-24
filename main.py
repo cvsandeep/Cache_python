@@ -8,7 +8,7 @@ import cache_operation
 import cache_performance
 from cache_types import Cmd
 
-file = "trace.file"
+file = "trace1.txt"
 
 
 def main():
