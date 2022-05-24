@@ -21,41 +21,41 @@ class CachePerformance():
 
     def IReadCount(self):
         self.__IreadCount += 1
-        Logger.debugLog(self, self.PERFORMANCE, __name__, self.__IreadCount)
+        Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__IreadCount)
 
     def DReadCount(self):
         self.__DreadCount += 1
-        Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DreadCount)
+        Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DreadCount)
 
     def DWriteCount(self):
         self.__DwriteCount += 1
-        Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DwriteCount)
+        Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DwriteCount)
 
     def HitCount(self):
         if self.op == Cmd.READ_DATA:
             self.__DreadHitCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DreadHitCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DreadHitCount)
 
         elif self.op == Cmd.WRITE_DATA:
             self.__DwriteHitCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DwriteHitCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DwriteHitCount)
 
         elif self.op == Cmd.READ_INSTRUCTION:
             self.__IreadHitCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__IreadHitCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__IreadHitCount)
 
     def MissCount(self):
         if self.op == Cmd.READ_DATA:
             self.__DreadMissCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DreadMissCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DreadMissCount)
 
         elif self.op == Cmd.WRITE_DATA:
             self.__DwriteMissCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DwriteMissCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__DwriteMissCount)
 
         elif self.op == Cmd.READ_INSTRUCTION:
             self.__IreadMissCount += 1
-            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__IreadMissCount)
+            Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__IreadMissCount)
 
     def __parse_read_write(self):
         with open("trace.file") as fileObj:
@@ -88,10 +88,10 @@ class CachePerformance():
         else:
             msgOut = "Total Number of Parsed Reads not equal to Read Operations"
             Logger.debugLog(self, 0, __name__, msgOut)
-        msgOut = "Total Number of Reads = %d" %(TotalReadOperations)
-        Logger.debugLog(self, 0, __name__, msgOut)
-        msgOut = "Total Parsed Reads = %d" %(self.__reads_parsed)
-        Logger.debugLog(self, 0, __name__, msgOut)
+            msgOut = "Total Number of Reads = %d" %(TotalReadOperations)
+            Logger.debugLog(self, 0, __name__, msgOut)
+            msgOut = "Total Parsed Reads = %d" %(self.__reads_parsed)
+            Logger.debugLog(self, 0, __name__, msgOut)
         if(self.__writes_parsed == TotalWriteOperations):
             msgOut =  "Total Number of Writes	      = %d" %(TotalWriteOperations)
             Logger.debugLog(self, 0, __name__, msgOut)
@@ -99,10 +99,11 @@ class CachePerformance():
         else:
             msgOut = "Total Number of Parsed Writes not equal to Write Operations"
             Logger.debugLog(self, 0, __name__, msgOut)
-        msgOut = "Total Number of Writes   = %d" %(TotalWriteOperations)
-        Logger.debugLog(self, 0, __name__, msgOut)
-        msgOut = "Total Parsed Write = %d" %(self.__writes_parsed)
-        Logger.debugLog(self, 0, __name__, msgOut)
+            msgOut = "Total Number of Writes   = %d" %(TotalWriteOperations)
+            Logger.debugLog(self, 0, __name__, msgOut)
+            msgOut = "Total Parsed Write = %d" %(self.__writes_parsed)
+            Logger.debugLog(self, 0, __name__, msgOut)
+
         msgOut = "Total Number of Cache hits   = %d" %(TotalHitCount)
         Logger.debugLog(self, 0, __name__, msgOut)
 

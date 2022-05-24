@@ -19,10 +19,7 @@ def main():
         address = int(address, 16)
         command = int(command)
         cache_performance.CachePerformance.op = command
-        print(command)
-        print(address)
         cache.DecodeUpdateAddress(address, command)
-        print(Cmd.READ_DATA.value)
         if command == Cmd.READ_DATA.value:
             cache.readData()
             cache.DReadCount()  # CountReads

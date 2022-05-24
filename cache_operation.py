@@ -9,7 +9,7 @@ import cache_memory
 from bus_operation import BusOperation
 from cache_performance import CachePerformance
 from cache_types import Cmd, OperationType, SnoopType, MessageType, StateType
-
+from logger import Logger
 
 class CacheOperation(BusOperation, CachePerformance):
     __MesiState = ("I", "S", "E", "M")
@@ -35,10 +35,10 @@ class CacheOperation(BusOperation, CachePerformance):
         self.offset = address & ((1 << self.__lines) - 1)
         self.set_index = address >> self.__lines & ((1 << self.__set) - 1)
         self.tag = address >> (self.__lines + self.__set) & ((1 << (32 - (self.__lines + self.__set))) - 1)
-        # ##debugLog(CACHEop, __func__, "*******************************************************************")
-        # msgout = "Address 0x%x  Offset 0x%x self.set_index 0x%x tag 0x%x  ", addr, offset, self.set_index, tag)
-        # ##debugLog(CACHEop, __func__, msgOut)
-        # ##debugLog(CACHEop, __func__, "*******************************************************************")
+        Logger.debugLog(self, Logger.CACHEOP, "DecodeUpdateAddress", "*******************************************************************")
+        msgout = "Address 0x%x  Offset 0x%x self.set_index 0x%x tag 0x%x  " % (self.__addr, self.offset, self.set_index, self.tag)
+        Logger.debugLog(self, Logger.CACHEOP, "DecodeUpdateAddress", msgout)
+        Logger.debugLog(self, Logger.CACHEOP, "DecodeUpdateAddress", "*******************************************************************")
 
     def ReIntializeCache(self):
         for set in range(self.__sets):
@@ -48,11 +48,11 @@ class CacheOperation(BusOperation, CachePerformance):
     def readData(self):
         evict = 1
         way = 0
-        # debugLog(CACHEopX,__func__,"")
+        Logger.debugLog(self, Logger.CACHEOPX, "readData", "")
         for w in range(self.associativity):
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
+                    Logger.debugLog(self, Logger.CACHEOP, "readData", "Data found")
                     self.HitCount()
                     if (self.__op == Cmd.WRITE_DATA):
                         self.__UpdateMESIstate(OperationType.RWIM, w)
@@ -65,10 +65,10 @@ class CacheOperation(BusOperation, CachePerformance):
                     evict = 0
                     way = w
 
-        # debugLog(CACHEop,__func__, "Data not found in the cache line")
+        Logger.debugLog(self, Logger.CACHEOP, "readData", "Data not found in the cache line")
 
         if (evict):
-            # debugLog(CACHEopX,__func__, "Evicting")
+            Logger.debugLog(self, Logger.CACHEOPX, "readData", "Evicting")
             way = self.__WhichWay(self.set_index)
             self.__VoidWay(way)
             self.__EvictCount()
@@ -76,7 +76,7 @@ class CacheOperation(BusOperation, CachePerformance):
             self.MissCount()
 
         msgout = "Set-%d Way-%d Tag-0x%08x" % (self.set_index, way, self.tag)
-        # debugLog(CACHEop,__func__,msgOut)
+        Logger.debugLog(self, Logger.CACHEOP, "readData", msgout)
         self.__L2.set[self.set_index].way[way].valid = 1
         self.__L2.set[self.set_index].way[way].dirty = 0
         self.__L2.set[self.set_index].way[way].tag = self.tag
@@ -92,13 +92,12 @@ class CacheOperation(BusOperation, CachePerformance):
 
     def writeData(self):
         way = 0
-        # debugLog(CACHEopX,__func__,"")
-        ##debugLog(1,__func__, msgOut)
+        Logger.debugLog(self, Logger.CACHEOPX, "writeData", "")
         for w in range(self.associativity):
             way = w
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
+                    Logger.debugLog(self, Logger.CACHEOP, "writeData", "Data found")
                     break  # Return data
         if (way == self.associativity):
             self.readData()  # Should this increase any Counts?
@@ -109,14 +108,14 @@ class CacheOperation(BusOperation, CachePerformance):
             self.__L2.set[self.set_index].way[w].dirty = 1
 
     def ReadInstruction(self):
-        # debugLog(2,__func__,"")
+        Logger.debugLog(self, 2, "ReadInstruction", "")
         self.readData()
 
     def SnoopedInvalidate(self):
         for w in range(self.associativity):
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
+                    Logger.debugLog(self, Logger.CACHEOP, "SnoopedInvalidate", "Data found")
                     self.UpdateMESIstateSnoop(OperationType.INVALIDATE, w)
                     # __UpdatePLRU(self.set_index,w)
                     return  # Return data
@@ -125,37 +124,31 @@ class CacheOperation(BusOperation, CachePerformance):
         for w in range(self.associativity):
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
+                    Logger.debugLog(self, Logger.CACHEOP, "SnoopedRead", "Data found")
                     self.UpdateMESIstateSnoop(OperationType.READ, w)
-                    # __UpdatePLRU(self.set_index,w)
-
                     return  # Return data
-        # debugLog(CACHEopX, __func__, "Data not Found")
+        Logger.debugLog(self, Logger.CACHEOPX, "SnoopedRead", "Data not Found")
 
     def SnoopedWrite(self):
         for w in range(self.associativity):
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
-                    self.UpdateMESIstateSnoop(OperationType.WRITE,
-                                         w)  # No need as there are no any operations for OperationType.WRITE.
-                    # __UpdatePLRU(self.set_index,w)
+                    Logger.debugLog(self, Logger.CACHEOP, "SnoopedWrite", "Data found")
+                    self.UpdateMESIstateSnoop(OperationType.WRITE, w)  # No need as there are no any operations for OperationType.WRITE.
                     return  # Return data
+        Logger.debugLog(self, Logger.CACHEOPX, "SnoopedWrite", "Data not Found")
 
-    # debugLog(CACHEopX, __func__, "Data not Found")
     def SnoopedReadX(self):
         for w in range(self.associativity):
             if (self.__L2.set[self.set_index].way[w].valid == 1):  # Check data is valid
                 if (self.__L2.set[self.set_index].way[w].tag == self.tag):  # Check tag
-                    # debugLog(CACHEop,__func__, "Data found")
-                    UpdateMESIstateSnoop(OperationType.RWIM, w)
-                    # __UpdatePLRU(self.set_index,w)
+                    Logger.debugLog(self, Logger.CACHEOP, "SnoopedReadX", "Data found")
+                    self.UpdateMESIstateSnoop(OperationType.RWIM, w)
                     return  # Return data
-
-        # debugLog(CACHEopX, __func__, "Data not Found")
+        Logger.debugLog(self, Logger.CACHEOPX, "SnoopedReadX", "Data not Found")
 
     def ClearAndSet(self):
-        # debugLog(CACHEopX, __func__, "")
+        Logger.debugLog(self, Logger.CACHEOPX, "ClearAndSet", "")
         for set in range(self.__sets):
             self.set_index = set
             for w in range(self.associativity):
@@ -165,15 +158,12 @@ class CacheOperation(BusOperation, CachePerformance):
 
     def PrintCacheLine(self):
         set_filled = 0
-        msgOut = " "
-        # debugLog(CACHEopX, __func__, "")
+        Logger.debugLog(self, Logger.CACHEOPX, "PrintCacheLine", "")
         for set in range(self.__sets):
             set_filled = 0
             msgout = "Set-%d:PLRU-" % (set)
             for lru in range(7):
-                buf = "%d" % (self.__L2.set[set].PLRU[lru])
-                msgout = msgout + buf
-
+                msgout += str(self.__L2.set[set].PLRU[lru])
             for w in range(self.associativity):
                 if (self.__L2.set[set].way[w].valid == 1):  # Check data is valid
                     # len += sizeof(msgOut)
@@ -188,8 +178,7 @@ class CacheOperation(BusOperation, CachePerformance):
                 msgout = msgout + buf
 
             if (set_filled):
-                print("")
-                # debugLog(0,__func__, msgOut)
+                Logger.debugLog(self, 0, "PrintCacheLine", msgout)
 
     def __UpdatePLRU(self, set, w):
         """
@@ -251,13 +240,13 @@ class CacheOperation(BusOperation, CachePerformance):
             buf = self.__L2.set[set].PLRU[lru]
             msgOut = buf
 
-    ###debugLog(CACHEopX,__func__, msgOut)
+        Logger.debugLog(self, Logger.CACHEOPX, "UpdatePLRU", msgOut)
 
     # """
     #  * This is called to find which way we need to evict
     # """
     def __WhichWay(self, set):
-        ###debugLog(CACHEop, __func__, "Evicting")
+        Logger.debugLog(self, Logger.CACHEOP, "WhichWay", "Evicting")
         if (self.associativity == 8):
             if (self.__L2.set[set].PLRU[0] == 0):
                 if (self.__L2.set[set].PLRU[2] == 0):
@@ -293,11 +282,11 @@ class CacheOperation(BusOperation, CachePerformance):
                 else:
                     return 0
         else:
-            ###debugLog(CACHEop, __func__, "Not supported")
+            Logger.debugLog(self, Logger.CACHEOP, "WhichWay", "Not supported")
             return -1
 
     def __VoidWay(self, way):
-        ###debugLog(CACHEopX, __func__, "")
+        Logger.debugLog(self, Logger.CACHEOPX, "VoidWay", "")
         if (self.__L2.set[self.set_index].way[way].valid == 1):
             if (self.__L2.set[self.set_index].way[way].MESI_state == StateType.MODEFIED):
                 self.MessageToCache(MessageType.GETLINE, self.__L2.set[self.set_index].way[way].tag)
@@ -320,7 +309,7 @@ class CacheOperation(BusOperation, CachePerformance):
     #  * Flushes the data to the DRAM through bus.
     # """
     def __Flush(self, way):
-        ###debugLog(CACHEop, __func__, "")
+        Logger.debugLog(self, Logger.CACHEOP, "Flush", "")
         if (self.__L2.set[self.set_index].way[way].MESI_state == StateType.MODEFIED):
             self.MessageToCache(MessageType.GETLINE, self.__L2.set[self.set_index].way[way].tag)
         # Getting the line from L1 to check weather its dirty or not
@@ -374,7 +363,7 @@ class CacheOperation(BusOperation, CachePerformance):
             # OperationType.WRITE dosent happens as L1 can only be in StateType.EXCLUSIVE or StateType.SHARED state when self.__L2 is in StateType.MODEFIED state.
         msgOut = "%s->%s" % (
             self.__MesiState[state], self.__MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
-        ##debugLog(CACHEop,__func__, msgOut)
+        Logger.debugLog(self, Logger.CACHEOP, "UpdateMESIstate", msgOut)
 
     def UpdateMESIstateSnoop(self, this_type, way):
         state = self.__L2.set[self.set_index].way[way].MESI_state
@@ -409,4 +398,4 @@ class CacheOperation(BusOperation, CachePerformance):
                 self.__L2.set[self.set_index].way[way].MESI_state = StateType.INVALID
         msgOut = "%s->%s" % (
             self.__MesiState[state], self.__MesiState[self.__L2.set[self.set_index].way[way].MESI_state])
-        ##debugLog(CACHEop,__func__, msgOut)
+        Logger.debugLog(self, Logger.CACHEOP, "UpdateMESIstateSnoop", msgOut)
