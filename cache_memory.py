@@ -16,11 +16,17 @@ class CACHE_LINE:
 
 class CACHE_SET_8_WAY:
     def __init__(self):
-        self.way = [CACHE_LINE()] * 8
-        self.PLRU = [0] * 7
+        self.way = []
+        self.PLRU = []
+        for x in range(8):
+            self.way.append(CACHE_LINE())
+        for x in range(7):
+            self.PLRU.append(0)
 
 
 class N_CACHE:
     def __init__(self, sets):
-        self.set = [CACHE_SET_8_WAY()] * sets
+        self.set = []
+        for x in range(sets):
+            self.set.append(CACHE_SET_8_WAY())
 

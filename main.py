@@ -8,10 +8,14 @@ import cache_operation
 import cache_performance
 from cache_types import Cmd
 
+file = "trace.file"
+
 
 def main():
+    global file
     cache = cache_operation.CacheOperation()
-    with open("trace.file") as fileObj:
+    cache.ReIntializeCache()
+    with open(file) as fileObj:
         lines = fileObj.readlines()
 
     for line in lines:

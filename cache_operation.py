@@ -11,6 +11,7 @@ from cache_performance import CachePerformance
 from cache_types import Cmd, OperationType, SnoopType, MessageType, StateType
 from logger import Logger
 
+
 class CacheOperation(BusOperation, CachePerformance):
     __MesiState = ("I", "S", "E", "M")
     __dirty_str = (" ", "D")
@@ -71,7 +72,7 @@ class CacheOperation(BusOperation, CachePerformance):
             Logger.debugLog(self, Logger.CACHEOPX, "readData", "Evicting")
             way = self.__WhichWay(self.set_index)
             self.__VoidWay(way)
-            self.__EvictCount()
+            self.EvictCount()
         else:
             self.MissCount()
 
@@ -334,7 +335,7 @@ class CacheOperation(BusOperation, CachePerformance):
 
             elif (optype == OperationType.WRITE or optype == OperationType.RWIM):
                 self.__L2.set[self.set_index].way[way].MESI_state = StateType.MODEFIED
-                self.Busoperation(OperationType.RWIM, addr, GetSnoopResult(self.__addr))
+                self.Busoperation(OperationType.RWIM, self.__addr, self.GetSnoopResult(self.__addr))
                 # Send readX command to bus
                 # First Time OperationType.WRITE
 

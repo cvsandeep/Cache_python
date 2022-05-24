@@ -57,6 +57,19 @@ class CachePerformance():
             self.__IreadMissCount += 1
             Logger.debugLog(self, Logger.PERFORMANCE, __name__, self.__IreadMissCount)
 
+    def EvictCount(self):
+        if self.op == Cmd.READ_DATA:
+            self.__DreadMissEvictCount += 1
+            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DreadMissEvictCount)
+
+        elif self.op == Cmd.WRITE_DATA:
+            self.__DwriteMissEvictCount += 1
+            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__DwriteMissEvictCount)
+
+        elif self.op == Cmd.READ_INSTRUCTION:
+            self.__IreadMissEvictCount += 1
+            Logger.debugLog(self, self.PERFORMANCE, __name__, self.__IreadMissEvictCount)
+
     def __parse_read_write(self):
         with open("trace.file") as fileObj:
             lines = fileObj.readlines()
